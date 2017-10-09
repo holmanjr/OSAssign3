@@ -8,8 +8,8 @@
 #include <vector>
 #include <cstring>
 
-double timeExecutable(std::string, std::vector<std::string> &);
-void runExecutable(std::string, std::vector<std::string> &);
+double timeExecutable(std::string, std::vector<std::string> &, double);
+void runExecutable(std::string, std::vector<std::string> &, double);
 void ptime(double);
 void history(std::vector<std::string> &);
 
@@ -30,14 +30,12 @@ int main(){
 		if(input == "exit") break;
 		else if(input == "ptime"){
 			ptime(runTime);
-			hist.pop_back();
 		}
 		else if(input == "history"){
-			hist.pop_back();
 			history(hist);
 		}
 		else{//Not a built in function, adds execution time
-			runTime += timeExecutable(input, hist);
+			runTime += timeExecutable(input, hist, runTime);
 		}
 	}
 
@@ -45,13 +43,13 @@ int main(){
 }
 
 //Times the executable only if successful
-double timeExecutable(std::string args, std::vector<std::string> &hist){
+double timeExecutable(std::string args, std::vector<std::string> &hist, double runTime){
 	auto start = std::chrono::system_clock::now();
 
 	int status;
 	auto pid = fork();
 	if(pid == 0){//Child process
-		runExecutable(args, hist);
+		runExecutable(args, hist, runTime);
 	}
 	else{//Parent process
 		wait(&status);
@@ -68,7 +66,7 @@ double timeExecutable(std::string args, std::vector<std::string> &hist){
 }
 
 //Creates correct data types and attempts to run executable
-void runExecutable(std::string args, std::vector<std::string> &hist){
+void runExecutable(std::string args, std::vector<std::string> &hist, double runTime){
 	std::stringstream ss;
 	std::string component;
 	ss.str(args);
@@ -83,7 +81,15 @@ void runExecutable(std::string args, std::vector<std::string> &hist){
 
 	//Execute command from history
 	if(components[0] == "^"){
-		runExecutable(hist[std::stoi(components[1])-1], hist);
+		if((hist[std::stoi(components[1])-1])== "ptime"){
+			ptime(runTime);
+			exit(0);
+		}
+		else if((hist[std::stoi(components[1])-1])== "history"){
+			history(hist);
+			exit(0);
+		}
+		else runExecutable(hist[std::stoi(components[1])-1], hist, runTime);
 		return;
 	}
 
